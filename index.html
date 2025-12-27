@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Object Detection</title>
+
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial;
+    }
+
+    video, canvas {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 120px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Real-Time Object Detection</h2>
+<button onclick="startDetection()">Start Detection</button>
+
+<br><br>
+
+<video id="video" width="400" height="300" autoplay></video>
+<canvas id="canvas" width="400" height="300"></canvas>
+
+<!-- TensorFlow.js -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+<!-- COCO-SSD Model -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+<script>
+let model, video, canvas, ctx;
+
+// STEP 1: Start camera + load model
+async function startDetection() {
+  video = document.getElementById("video");
+  canvas = document.getElementById("canvas");
+  ctx = canvas.getContext("2d");
+
+  // Open webcam
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  video.srcObject = stream;
+
+  // Load object detection model
+  model = await cocoSsd.load();
+  detectFrame();
+}
+
+// STEP 2: Detect objects frame by frame
+async function detectFrame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const predictions = await model.detect(video);
+
+  predictions.forEach(p => {
+    const [x, y, width, height] = p.bbox;
+
+    // Draw box
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+
+    // Draw label
+    ctx.fillStyle = "red";
+    ctx.font = "16px Arial";
+    ctx.fillText(
+      `${p.class} (${Math.round(p.score * 100)}%)`,
+      x,
+      y > 10 ? y - 5 : 10
+    );
+  });
+
+  requestAnimationFrame(detectFrame);
+}
+</script>
+
+</body>
+</html>
